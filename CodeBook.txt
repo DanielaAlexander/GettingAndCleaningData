@@ -1,0 +1,8 @@
+Code book for the Smartphone Data Project
+
+Column Name	how many values
+	Represents
+	Values
+
+
+2.7841883e-001

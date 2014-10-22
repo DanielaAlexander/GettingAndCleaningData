@@ -1,0 +1,161 @@
+---
+title: Getting and Cleaning Data - Project
+output: html_document
+---
+Here are the data for the project: 
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip 
+
+Goals of the exercise:
+
+======================
+
+Create one R script called run_analysis.R that does the following:
+  1. Merges the training and the test sets to create one data set.
+  
+	2. Extracts only the measurements on the mean and standard deviation for each measurement. 
+  
+	3. Uses descriptive activity names to name the activities in the data set
+  
+	4. Appropriately labels the data set with descriptive variable names. 
+  
+	5. From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each 
+subject.
+
+
+CodeBook - CodeBook.txt describes the final tidy data set uploaded to Coursera
+
+
+Approach:
+
+=========
+
+(comments are also in the code, step by step, for a clear understanding of the R code)
+
+Data is organized in 3 levels folders.
+
+MainData folder structure:
+
+	- Train subfolder - data used to train the system (70% of the dataset)
+  
+		- Inertial Signals subfolder
+    
+			- 9 files with more data
+      
+		- subject_train.txt  -> contains the subjects of the experiment
+    
+		- X_train.txt -> contains the data per se
+    
+		- Y_train.txt  -> contains the activities of the experiments
+    
+	- Test subfolder - data used to test the system (30% of the dataset)
+  
+		- Inertial Signals subfolder
+    
+			- 9 files with more data
+      
+		- subject_test.txt  -> contains the subjects of the experiment
+    
+		- X_test.txt -> contains the data per se
+    
+		- Y_test.txt  -> contains the activities of the experiments	
+    
+	- Readme.txt
+  
+	- activity-labels.txt
+  
+	- features_info.txt
+  
+	- feature.txt
+  
+	
+================================================================
+
+ 1. Merge the training and the test sets to create one data set.
+ 
+================================================================
+
+
+In the Train and Test folders - there are 3 files and a subfolder in each of these. I will ignore the subfolder, as the data in there is not relevant to our exercise.
+
+
+Files X_train.txt and X_test.txt are fixed file format that contains the training and test data - 561 columns and 7352 rows, 2947 rows respectively. I'm using red.fwf to read them, with the field size = 4.
+
+
+To obtain one data set, we'll rbind them together. New set is in mergedData data frame.
+
+
+==========================================================================================
+
+ 2. Extract only the measurements on the mean and standard deviation for each measurement. 
+ 
+==========================================================================================
+
+
+The features.txt file contains the activities names.It has 561 rows, each coresponding to a column in mergedData.
+
+
+To identify the needed columns, we'll search for [Mm]ean | [Ss]td in features file with grep. The vector obtained is what we use to subset the data frame to only the columns we care about.
+
+
+==========================================================================================
+
+ 3. Use descriptive activity names to name the activities in the dataset
+ 
+==========================================================================================
+
+
+File activity_labels.txt contains the activity names. We need to exhange the numbers representing the activities to their labels in the data frames extracted from Y_Train.txt and Y_Test.txt. 
+
+
+First, we're doing that by joining the data frames (used join from plyr to ensure the order of the activities in the Y files is preserved. The new data frames contain both the numbered activities in order and the labels.
+
+
+Then, we rbind the new labeled Train and Test activities in this precise order and cbind them with the data set in mergedData.
+
+
+We also will get rid of the first column, which only has the number for the activity. That is not needed anymore.
+
+
+==========================================================================================
+
+ 4. Appropriately label the data set w/ descriptive variable name
+ 
+==========================================================================================
+
+
+The path of least resistance is to rename the columns using their original names in the features.txt. We used that already to identify the needed columns, so we're reusing that grep, this time to create a vector we can use to rename the columns of our data frame. We're also appending the "Activity" as the first column name, because that's how we cbinded the frames at step 3. use colnames to rename the columns.
+
+
+==========================================================================================
+
+ 5. from data created at step 4 create a second, independent, tidy dataset
+ 
+    with the average for each activity and each subject
+    
+==========================================================================================
+
+
+First, we need to get the subjects matched with the data. The subjects come from the subject_train.txt and subject_test.txt. We'll rbind them in the order Train, Test as we did all the other ones, so they match the data and the activities, then cbind them with the data created at step 4.
+
+
+Our data frame looks like:
+
+Subject		Activity	columns with various measurements
+
+
+To tidy the data to get precisely 1 subject X 1 activity combination with their mean as value, i've applied ddply with numcolwise(mean) to calculate the average per column, for each measurement column and each combination of subject+ activity row.
+
+
+The final tidy data set has 180 rows (30 subjects x  6 activities)  and 86 columns
+
+
+=================================================================================
+
+6. write the dataset in a txt file created with write.table() using row.name=FALSE
+
+=================================================================================
+
+write.table(tidyData, "tidy_data_DA.txt", row.name=FALSE)
+
+
